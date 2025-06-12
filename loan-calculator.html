@@ -1,4 +1,4 @@
-          <!DOCTYPE html>
+   <!DOCTYPE html>
 <html>
 <head>
     <title>Loan Calculator</title>
@@ -36,12 +36,20 @@
             font-size: 16px;
             margin-top: 5px;
         }
+        .calendar-link {
+            color: #2563eb;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 5px;
+            font-size: 14px;
+            font-weight: 500;
+        }
         .divider {
             border-top: 1px solid #e2e8f0;
             margin: 25px 0;
         }
         .calculate-btn {
-            background: #3b82f6;
+            background: #2563eb;
             color: white;
             border: none;
             padding: 14px;
@@ -56,11 +64,11 @@
             text-align: center;
             margin: 25px 0;
             line-height: 1.6;
+            font-size: 16px;
         }
         .result-value {
             font-weight: 600;
             color: #1e40af;
-            font-size: 18px;
         }
         .more-tools {
             margin-top: 30px;
@@ -77,13 +85,10 @@
             color: #334155;
             cursor: pointer;
             text-align: center;
+            transition: all 0.2s;
         }
-        .calendar-link {
-            color: #3b82f6;
-            text-decoration: none;
-            display: inline-block;
-            margin-top: 5px;
-            font-size: 14px;
+        .tool-btn:hover {
+            background: #e2e8f0;
         }
     </style>
 </head>
@@ -92,7 +97,7 @@
         <h1>Loan Calculator</h1>
         
         <div class="input-row">
-            <input type="number" id="amount" placeholder="Loan Amount ($)" value="100000">
+            <input type="number" id="amount" placeholder="Loan Amount ($)" value="200000">
         </div>
         
         <div class="input-row">
@@ -109,14 +114,14 @@
         <button class="calculate-btn" onclick="calculate()">Calculate Monthly Payment</button>
         
         <div class="result">
-            <div><strong>Monthly Payment:</strong> <span class="result-value" id="monthly-payment">$2,783.07</span></div>
-            <div><strong>Total Interest:</strong> <span class="result-value" id="total-interest">$33,587.59</span></div>
+            <div><strong>Monthly Payment:</strong> <span class="result-value" id="monthly-payment">$5,566.15</span></div>
+            <div><strong>Total Interest:</strong> <span class="result-value" id="total-interest">$67,175.18</span></div>
         </div>
     </div>
     
     <div class="calculator more-tools">
         <h3>Try These Next:</h3>
-        <button class="tool-btn" onclick="showMortgageCalc()">Mortgage Calculator</button>
+        <button class="tool-btn" onclick="showMengageCalc()">Mengage Calculator</button>
         <button class="tool-btn" onclick="showTotalCalc()">TOTAL NAME</button>
     </div>
 
@@ -149,8 +154,8 @@
             document.getElementById('total-interest').textContent = formatCurrency(totalInterest);
         }
 
-        function showMortgageCalc() {
-            alert("Mortgage Calculator coming soon!");
+        function showMengageCalc() {
+            alert("Mengage Calculator coming soon!");
         }
         
         function showTotalCalc() {
@@ -161,4 +166,4 @@
         window.onload = calculate;
     </script>
 </body>
-</html> 
+</html>     
