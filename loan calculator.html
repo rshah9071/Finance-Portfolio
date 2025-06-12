@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Loan Calculator</title>
+    <style>
+        body { font-family: Arial; margin: 40px; }
+        input, button { padding: 8px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h2>Loan Calculator</h2>
+    <input type="number" id="amount" placeholder="Loan Amount ($)">  
+    <input type="number" id="rate" placeholder="Interest Rate (%)">  
+    <button onclick="calculate()">Calculate</button>
+    <p id="result"></p>
+
+    <script>
+        function calculate() {
+            const amount = document.getElementById("amount").value;
+            const rate = document.getElementById("rate").value;
+            const interest = (amount * rate / 100).toFixed(2);
+            document.getElementById("result").innerHTML = 
+                `Interest: $${interest}`;
+        }
+    </script>
+</body>
+</html>
