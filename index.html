@@ -1,10 +1,228 @@
+
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Finance Portfolio</title>
+    <title>Financial Calculator Suite</title>
+    <style>
+        /* === Main Styles === */
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 25px;
+            background: #f8fafc;
+            color: #1e293b;
+        }
+        .calculator {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        h1, h2, h3 {
+            color: #1e293b;
+            text-align: center;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 14px;
+            width: 100%;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px 0;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #1d4ed8;
+        }
+        
+        /* === Results Section === */
+        .result {
+            padding: 15px;
+            background: #f1f5f9;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .result-value {
+            font-weight: 600;
+            color: #1e40af;
+        }
+        
+        /* === Amortization Table === */
+        #amortization {
+            display: none;
+            margin-top: 30px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th {
+            background: #2563eb;
+            color: white;
+            padding: 10px;
+            text-align: left;
+        }
+        td {
+            padding: 8px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        /* === Print Styles === */
+        @media print {
+            body { zoom: 80%; padding: 0; }
+            button, .more-tools { display: none; }
+            .calculator { box-shadow: none; border: 1px solid #ddd; }
+        }
+    </style>
 </head>
 <body>
-    <h1>Welcome to My Portfolio</h1>
-    <a href="loan-calculator.html">Loan Calculator</a>
+    <div class="calculator" id="main-calculator">
+        <h1>Loan Calculator</h1>
+        
+        <input type="number" id="amount" placeholder="Loan Amount ($)" value="100000">
+        <input type="number" id="rate" placeholder="Interest Rate (%)" value="15">
+        <input type="number" id="years" placeholder="Loan Term (Years)" value="4">
+        
+        <button onclick="calculateLoan()">Calculate Monthly Payment</button>
+        <button onclick="window.print()" style="background:#4b5563;">Print/Save PDF</button>
+        
+        <div class="result">
+            <div><strong>Monthly Payment:</strong> <span class="result-value" id="monthly-payment">$0.00</span></div>
+            <div><strong>Total Interest:</strong> <span class="result-value" id="total-interest">$0.00</span></div>
+        </div>
+        
+        <div id="amortization">
+            <h3>Payment Schedule</h3>
+            <table id="schedule-table">
+                <thead>
+                    <tr>
+                        <th>Month</th>
+                        <th>Payment</th>
+                        <th>Principal</th>
+                        <th>Interest</th>
+                        <th>Balance</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div class="calculator more-tools">
+        <h3>Financial Tools</h3>
+        <button onclick="showMortgageCalc()">Mortgage Calculator</button>
+        <button onclick="showROICalc()">ROI Calculator</button>
+    </div>
+
+    <script>
+        // ===== LOAN CALCULATOR =====
+        function calculateLoan() {
+            const amount = parseFloat(document.getElementById('amount').value);
+            const rate = parseFloat(document.getElementById('rate').value);
+            const years = parseFloat(document.getElementById('years').value);
+            
+            if (isNaN(amount) || isNaN(rate) || isNaN(years)) {
+                alert("Please enter valid numbers");
+                return;
+            }
+            
+            const monthlyRate = rate / 100 / 12;
+            const payments = years * 12;
+            const monthly = (amount * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -payments));
+            const totalInterest = monthly * payments - amount;
+            
+            document.getElementById('monthly-payment').textContent = formatCurrency(monthly);
+            document.getElementById('total-interest').textContent = formatCurrency(totalInterest);
+            
+            generateAmortization(amount, rate, years, monthly);
+        }
+        
+        function generateAmortization(amount, rate, years, monthly) {
+            let balance = amount;
+            const monthlyRate = rate/100/12;
+            let html = '';
+            
+            for(let month = 1; month <= years * 12; month++) {
+                const interest = balance * monthlyRate;
+                const principal = monthly - interest;
+                balance -= principal;
+                
+                html += `
+                <tr>
+                    <td>${month}</td>
+                    <td>${formatCurrency(monthly)}</td>
+                    <td>${formatCurrency(principal)}</td>
+                    <td>${formatCurrency(interest)}</td>
+                    <td>${balance > 0 ? formatCurrency(balance) : '$0.00'}</td>
+                </tr>`;
+            }
+            
+            document.querySelector('#schedule-table tbody').innerHTML = html;
+            document.getElementById('amortization').style.display = 'block';
+        }
+        
+        // ===== MORTGAGE CALCULATOR =====
+        function showMortgageCalc() {
+            document.getElementById('main-calculator').innerHTML = `
+                <h1>Mortgage Calculator</h1>
+                <input type="number" id="homePrice" placeholder="Home Price ($)" value="300000">
+                <input type="number" id="downPayment" placeholder="Down Payment ($)" value="60000">
+                <input type="number" id="mortgageRate" placeholder="Interest Rate (%)" value="3.5">
+                <input type="number" id="mortgageTerm" placeholder="Loan Term (Years)" value="30">
+                
+                <button onclick="calculateMortgage()">Calculate Payment</button>
+                <button onclick="window.print()" style="background:#4b5563;">Print/Save PDF</button>
+                <button onclick="showLoanCalc()" style="background:#6b7280;">Back to Loan Calculator</button>
+                
+                <div class="result">
+                    <div><strong>Monthly Payment:</strong> <span class="result-value" id="mortgage-payment">$0.00</span></div>
+                </div>
+            `;
+        }
+        
+        function calculateMortgage() {
+            const price = parseFloat(document.getElementById('homePrice').value);
+            const down = parseFloat(document.getElementById('downPayment').value);
+            const rate = parseFloat(document.getElementById('mortgageRate').value);
+            const years = parseFloat(document.getElementById('mortgageTerm').value);
+            
+            const amount = price - down;
+            const monthlyRate = rate / 100 / 12;
+            const payments = years * 12;
+            const monthly = (amount * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -payments));
+            
+            document.getElementById('mortgage-payment').textContent = formatCurrency(monthly);
+        }
+        
+        function showLoanCalc() {
+            window.location.reload(); // Simpler than rebuilding DOM
+        }
+        
+        // ===== COMMON FUNCTIONS =====
+        function formatCurrency(num) {
+            return '$' + num.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+        }
+        
+        function showROICalc() {
+            alert("ROI Calculator coming in v2.0!");
+        }
+        
+        // Initialize
+        window.onload = calculateLoan;
+    </script>
 </body>
 </html>
