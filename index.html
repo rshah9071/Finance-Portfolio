@@ -1,33 +1,44 @@
-
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Financial Calculator Suite</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Financial Calculator Suite</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
     <style>
-        /* === Main Styles === */
+        /* ===== MAIN STYLES ===== */
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
-            max-width: 500px;
+            max-width: 600px;
             margin: 0 auto;
-            padding: 25px;
+            padding: 20px;
             background: #f8fafc;
             color: #1e293b;
         }
-        .calculator {
+        .calculator-card {
             background: white;
             border-radius: 12px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             padding: 30px;
             margin-bottom: 20px;
         }
-        h1, h2, h3 {
-            color: #1e293b;
+        h1, h2 {
+            color: #1e40af;
             text-align: center;
         }
-        input {
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #334155;
+        }
+        input, select {
             width: 100%;
             padding: 12px;
-            margin: 8px 0 15px;
             border: 1px solid #e2e8f0;
             border-radius: 8px;
             font-size: 16px;
@@ -47,8 +58,6 @@
         button:hover {
             background: #1d4ed8;
         }
-        
-        /* === Results Section === */
         .result {
             padding: 15px;
             background: #f1f5f9;
@@ -59,76 +68,96 @@
             font-weight: 600;
             color: #1e40af;
         }
-        
-        /* === Amortization Table === */
-        #amortization {
-            display: none;
-            margin-top: 30px;
+        .calculator-nav {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
         }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
+        .calculator-nav button {
+            flex: 1;
         }
-        th {
-            background: #2563eb;
-            color: white;
-            padding: 10px;
-            text-align: left;
+        #roiChart, #amortChart {
+            margin-top: 20px;
+            max-height: 300px;
         }
-        td {
-            padding: 8px;
-            border-bottom: 1px solid #e2e8f0;
-        }
-        
-        /* === Print Styles === */
         @media print {
-            body { zoom: 80%; padding: 0; }
-            button, .more-tools { display: none; }
-            .calculator { box-shadow: none; border: 1px solid #ddd; }
+            button, .calculator-nav { display: none; }
+            body { padding: 0; background: white; }
         }
     </style>
 </head>
 <body>
-    <div class="calculator" id="main-calculator">
+    <div class="calculator-nav">
+        <button onclick="showCalculator('loan')">Loan Calculator</button>
+        <button onclick="showCalculator('roi')">ROI Calculator</button>
+    </div>
+
+    <!-- ===== LOAN CALCULATOR ===== -->
+    <div id="loan-calculator" class="calculator-card">
         <h1>Loan Calculator</h1>
         
-        <input type="number" id="amount" placeholder="Loan Amount ($)" value="100000">
-        <input type="number" id="rate" placeholder="Interest Rate (%)" value="15">
-        <input type="number" id="years" placeholder="Loan Term (Years)" value="4">
+        <div class="input-group">
+            <label>Loan Amount ($)</label>
+            <input type="number" id="amount" value="100000">
+        </div>
         
-        <button onclick="calculateLoan()">Calculate Monthly Payment</button>
-        <button onclick="window.print()" style="background:#4b5563;">Print/Save PDF</button>
+        <div class="input-group">
+            <label>Interest Rate (%)</label>
+            <input type="number" id="rate" value="5.5" step="0.01">
+        </div>
+        
+        <div class="input-group">
+            <label>Loan Term (Years)</label>
+            <input type="number" id="years" value="15">
+        </div>
+        
+        <button onclick="calculateLoan()">Calculate Payment</button>
+        <button onclick="window.print()" style="background:#4b5563;">Print Report</button>
         
         <div class="result">
-            <div><strong>Monthly Payment:</strong> <span class="result-value" id="monthly-payment">$0.00</span></div>
-            <div><strong>Total Interest:</strong> <span class="result-value" id="total-interest">$0.00</span></div>
+            <div><strong>Monthly Payment:</strong> <span id="monthly-payment" class="result-value">$0.00</span></div>
+            <div><strong>Total Interest:</strong> <span id="total-interest" class="result-value">$0.00</span></div>
+            <div><strong>Total Cost:</strong> <span id="total-cost" class="result-value">$0.00</span></div>
         </div>
         
-        <div id="amortization">
-            <h3>Payment Schedule</h3>
-            <table id="schedule-table">
-                <thead>
-                    <tr>
-                        <th>Month</th>
-                        <th>Payment</th>
-                        <th>Principal</th>
-                        <th>Interest</th>
-                        <th>Balance</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-        </div>
+        <canvas id="amortChart"></canvas>
     </div>
-    
-    <div class="calculator more-tools">
-        <h3>Financial Tools</h3>
-        <button onclick="showMortgageCalc()">Mortgage Calculator</button>
-        <button onclick="showROICalc()">ROI Calculator</button>
+
+    <!-- ===== ROI CALCULATOR ===== -->
+    <div id="roi-calculator" class="calculator-card" style="display:none;">
+        <h1>Investment ROI Calculator</h1>
+        
+        <div class="input-group">
+            <label>Initial Investment ($)</label>
+            <input type="number" id="initial-investment" value="50000">
+        </div>
+        
+        <div class="input-group">
+            <label>Final Value ($)</label>
+            <input type="number" id="final-value" value="75000">
+        </div>
+        
+        <div class="input-group">
+            <label>Investment Period (Years)</label>
+            <input type="number" id="investment-period" value="5">
+        </div>
+        
+        <button onclick="calculateROI()">Calculate ROI</button>
+        <button onclick="exportROIData()" style="background:#059669;">Export to Excel</button>
+        
+        <div class="result">
+            <div><strong>ROI:</strong> <span id="roi-percentage" class="result-value">0%</span></div>
+            <div><strong>Annualized Return:</strong> <span id="annualized-return" class="result-value">0%</span></div>
+            <div><strong>Profit/Loss:</strong> <span id="profit-loss" class="result-value">$0</span></div>
+        </div>
+        
+        <canvas id="roiChart"></canvas>
     </div>
 
     <script>
+        // ===== GLOBAL VARIABLES =====
+        let loanChart, roiChart;
+
         // ===== LOAN CALCULATOR =====
         function calculateLoan() {
             const amount = parseFloat(document.getElementById('amount').value);
@@ -147,82 +176,162 @@
             
             document.getElementById('monthly-payment').textContent = formatCurrency(monthly);
             document.getElementById('total-interest').textContent = formatCurrency(totalInterest);
+            document.getElementById('total-cost').textContent = formatCurrency(amount + totalInterest);
             
-            generateAmortization(amount, rate, years, monthly);
+            renderAmortizationChart(amount, rate, years, monthly);
         }
-        
-        function generateAmortization(amount, rate, years, monthly) {
-            let balance = amount;
-            const monthlyRate = rate/100/12;
-            let html = '';
+
+        // ===== ROI CALCULATOR =====
+        function calculateROI() {
+            const initial = parseFloat(document.getElementById('initial-investment').value);
+            const final = parseFloat(document.getElementById('final-value').value);
+            const years = parseFloat(document.getElementById('investment-period').value);
             
-            for(let month = 1; month <= years * 12; month++) {
-                const interest = balance * monthlyRate;
-                const principal = monthly - interest;
-                balance -= principal;
-                
-                html += `
-                <tr>
-                    <td>${month}</td>
-                    <td>${formatCurrency(monthly)}</td>
-                    <td>${formatCurrency(principal)}</td>
-                    <td>${formatCurrency(interest)}</td>
-                    <td>${balance > 0 ? formatCurrency(balance) : '$0.00'}</td>
-                </tr>`;
+            if (isNaN(initial) || isNaN(final) || isNaN(years)) {
+                alert("Please enter valid numbers");
+                return;
             }
             
-            document.querySelector('#schedule-table tbody').innerHTML = html;
-            document.getElementById('amortization').style.display = 'block';
-        }
-        
-        // ===== MORTGAGE CALCULATOR =====
-        function showMortgageCalc() {
-            document.getElementById('main-calculator').innerHTML = `
-                <h1>Mortgage Calculator</h1>
-                <input type="number" id="homePrice" placeholder="Home Price ($)" value="300000">
-                <input type="number" id="downPayment" placeholder="Down Payment ($)" value="60000">
-                <input type="number" id="mortgageRate" placeholder="Interest Rate (%)" value="3.5">
-                <input type="number" id="mortgageTerm" placeholder="Loan Term (Years)" value="30">
-                
-                <button onclick="calculateMortgage()">Calculate Payment</button>
-                <button onclick="window.print()" style="background:#4b5563;">Print/Save PDF</button>
-                <button onclick="showLoanCalc()" style="background:#6b7280;">Back to Loan Calculator</button>
-                
-                <div class="result">
-                    <div><strong>Monthly Payment:</strong> <span class="result-value" id="mortgage-payment">$0.00</span></div>
-                </div>
-            `;
-        }
-        
-        function calculateMortgage() {
-            const price = parseFloat(document.getElementById('homePrice').value);
-            const down = parseFloat(document.getElementById('downPayment').value);
-            const rate = parseFloat(document.getElementById('mortgageRate').value);
-            const years = parseFloat(document.getElementById('mortgageTerm').value);
+            const profit = final - initial;
+            const roi = (profit / initial) * 100;
+            const annualized = ((final / initial) ** (1/years) - 1) * 100;
             
-            const amount = price - down;
+            document.getElementById('roi-percentage').textContent = roi.toFixed(2) + "%";
+            document.getElementById('annualized-return').textContent = annualized.toFixed(2) + "%";
+            document.getElementById('profit-loss').textContent = 
+                profit >= 0 ? "+$" + profit.toFixed(2) : "-$" + Math.abs(profit).toFixed(2);
+            
+            renderROIChart(initial, final);
+        }
+
+        // ===== CHART FUNCTIONS =====
+        function renderAmortizationChart(amount, rate, years, monthly) {
+            const ctx = document.getElementById('amortChart').getContext('2d');
+            const labels = Array.from({length: years}, (_, i) => `Year ${i+1}`);
+            const principalData = [];
+            const interestData = [];
+            
+            let balance = amount;
             const monthlyRate = rate / 100 / 12;
-            const payments = years * 12;
-            const monthly = (amount * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -payments));
             
-            document.getElementById('mortgage-payment').textContent = formatCurrency(monthly);
+            for (let year = 1; year <= years; year++) {
+                let yearlyPrincipal = 0;
+                let yearlyInterest = 0;
+                
+                for (let month = 1; month <= 12; month++) {
+                    const interest = balance * monthlyRate;
+                    const principal = monthly - interest;
+                    yearlyPrincipal += principal;
+                    yearlyInterest += interest;
+                    balance -= principal;
+                }
+                
+                principalData.push(yearlyPrincipal);
+                interestData.push(yearlyInterest);
+            }
+            
+            if (window.loanChart) loanChart.destroy();
+            
+            window.loanChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Principal Paid',
+                            data: principalData,
+                            backgroundColor: 'rgba(54, 162, 235, 0.7)'
+                        },
+                        {
+                            label: 'Interest Paid',
+                            data: interestData,
+                            backgroundColor: 'rgba(255, 99, 132, 0.7)'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: { stacked: true },
+                        y: { 
+                            stacked: true,
+                            title: { display: true, text: 'Amount ($)' }
+                        }
+                    }
+                }
+            });
         }
-        
-        function showLoanCalc() {
-            window.location.reload(); // Simpler than rebuilding DOM
+
+        function renderROIChart(initial, final) {
+            const ctx = document.getElementById('roiChart').getContext('2d');
+            
+            if (window.roiChart) window.roiChart.destroy();
+            
+            window.roiChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Initial Investment', 'Profit'],
+                    datasets: [{
+                        data: [initial, final - initial],
+                        backgroundColor: [
+                            'rgba(54, 162, 235, 0.7)',
+                            'rgba(75, 192, 192, 0.7)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + formatCurrency(context.raw);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
         }
-        
-        // ===== COMMON FUNCTIONS =====
+
+        // ===== UTILITY FUNCTIONS =====
         function formatCurrency(num) {
             return '$' + num.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
         }
-        
-        function showROICalc() {
-            alert("ROI Calculator coming in v2.0!");
+
+        function showCalculator(type) {
+            document.getElementById('loan-calculator').style.display = type === 'loan' ? 'block' : 'none';
+            document.getElementById('roi-calculator').style.display = type === 'roi' ? 'block' : 'none';
         }
-        
+
+        function exportROIData() {
+            const initial = parseFloat(document.getElementById('initial-investment').value);
+            const final = parseFloat(document.getElementById('final-value').value);
+            const years = parseFloat(document.getElementById('investment-period').value);
+            const profit = final - initial;
+            
+            const data = [
+                ['Metric', 'Value'],
+                ['Initial Investment', formatCurrency(initial)],
+                ['Final Value', formatCurrency(final)],
+                ['Investment Period', years + ' years'],
+                ['Profit/Loss', profit >= 0 ? '+'+formatCurrency(profit) : formatCurrency(profit)],
+                ['ROI', ((profit/initial)*100).toFixed(2)+'%'],
+                ['Annualized Return', ((Math.pow(final/initial,1/years)-1)*100).toFixed(2)+'%']
+            ];
+            
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            XLSX.utils.book_append_sheet(wb, ws, "ROI Analysis");
+            XLSX.writeFile(wb, "ROI_Report.xlsx");
+        }
+
         // Initialize
-        window.onload = calculateLoan;
+        window.onload = function() {
+            calculateLoan();
+            showCalculator('loan');
+        };
     </script>
 </body>
 </html>
