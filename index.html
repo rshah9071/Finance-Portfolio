@@ -1,5 +1,5 @@
 
-       <!DOCTYPE html>
+     <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -99,17 +99,17 @@
         
         <div class="input-group">
             <label>Loan Amount ($)</label>
-            <input type="number" id="amount" value="100000">
+            <input type="number" id="amount" value="100000" min="1">
         </div>
         
         <div class="input-group">
             <label>Interest Rate (%)</label>
-            <input type="number" id="rate" value="5.5" step="0.01">
+            <input type="number" id="rate" value="5.5" step="0.01" min="0.01">
         </div>
         
         <div class="input-group">
             <label>Loan Term (Years)</label>
-            <input type="number" id="years" value="15">
+            <input type="number" id="years" value="15" min="1">
         </div>
         
         <button onclick="calculateLoan()">Calculate Payment</button>
@@ -130,17 +130,17 @@
         
         <div class="input-group">
             <label>Initial Investment ($)</label>
-            <input type="number" id="initial-investment" value="50000">
+            <input type="number" id="initial-investment" value="50000" min="1">
         </div>
         
         <div class="input-group">
             <label>Final Value ($)</label>
-            <input type="number" id="final-value" value="75000">
+            <input type="number" id="final-value" value="75000" min="0">
         </div>
         
         <div class="input-group">
             <label>Investment Period (Years)</label>
-            <input type="number" id="investment-period" value="5">
+            <input type="number" id="investment-period" value="5" min="0.1" step="0.1">
         </div>
         
         <button onclick="calculateROI()">Calculate ROI</button>
@@ -165,8 +165,8 @@
             const rate = parseFloat(document.getElementById('rate').value);
             const years = parseFloat(document.getElementById('years').value);
             
-            if (isNaN(amount) || isNaN(rate) || isNaN(years)) {
-                alert("Please enter valid numbers");
+            if (isNaN(amount) || amount <= 0 || isNaN(rate) || rate <= 0 || isNaN(years) || years <= 0) {
+                alert("Please enter valid positive numbers");
                 return;
             }
             
@@ -188,8 +188,8 @@
             const final = parseFloat(document.getElementById('final-value').value);
             const years = parseFloat(document.getElementById('investment-period').value);
             
-            if (isNaN(initial) || isNaN(final) || isNaN(years)) {
-                alert("Please enter valid numbers");
+            if (isNaN(initial) || initial <= 0 || isNaN(final) || final < 0 || isNaN(years) || years <= 0) {
+                alert("Please enter valid numbers (Initial Investment and Period must be > 0)");
                 return;
             }
             
@@ -265,18 +265,19 @@
 
         function renderROIChart(initial, final) {
             const ctx = document.getElementById('roiChart').getContext('2d');
+            const profit = final - initial;
             
             if (window.roiChart) window.roiChart.destroy();
             
             window.roiChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Initial Investment', 'Profit'],
+                    labels: ['Initial Investment', profit >= 0 ? 'Profit' : 'Loss'],
                     datasets: [{
-                        data: [initial, final - initial],
+                        data: [initial, Math.abs(profit)],
                         backgroundColor: [
                             'rgba(54, 162, 235, 0.7)',
-                            'rgba(75, 192, 192, 0.7)'
+                            profit >= 0 ? 'rgba(75, 192, 192, 0.7)' : 'rgba(255, 99, 132, 0.7)'
                         ],
                         borderWidth: 1
                     }]
@@ -304,28 +305,50 @@
         function showCalculator(type) {
             document.getElementById('loan-calculator').style.display = type === 'loan' ? 'block' : 'none';
             document.getElementById('roi-calculator').style.display = type === 'roi' ? 'block' : 'none';
+            
+            // Resize charts when switching tabs
+            setTimeout(() => {
+                if (type === 'loan' && window.loanChart) {
+                    window.loanChart.resize();
+                } else if (type === 'roi' && window.roiChart) {
+                    window.roiChart.resize();
+                }
+            }, 100);
         }
 
         function exportROIData() {
-            const initial = parseFloat(document.getElementById('initial-investment').value);
-            const final = parseFloat(document.getElementById('final-value').value);
-            const years = parseFloat(document.getElementById('investment-period').value);
-            const profit = final - initial;
-            
-            const data = [
-                ['Metric', 'Value'],
-                ['Initial Investment', formatCurrency(initial)],
-                ['Final Value', formatCurrency(final)],
-                ['Investment Period', years + ' years'],
-                ['Profit/Loss', profit >= 0 ? '+'+formatCurrency(profit) : formatCurrency(profit)],
-                ['ROI', ((profit/initial)*100).toFixed(2)+'%'],
-                ['Annualized Return', ((Math.pow(final/initial,1/years)-1)*100).toFixed(2)+'%']
-            ];
-            
-            const wb = XLSX.utils.book_new();
-            const ws = XLSX.utils.aoa_to_sheet(data);
-            XLSX.utils.book_append_sheet(wb, ws, "ROI Analysis");
-            XLSX.writeFile(wb, "ROI_Report.xlsx");
+            try {
+                const initial = parseFloat(document.getElementById('initial-investment').value);
+                const final = parseFloat(document.getElementById('final-value').value);
+                const years = parseFloat(document.getElementById('investment-period').value);
+                
+                if (isNaN(initial) || initial <= 0 || isNaN(final) || isNaN(years) || years <= 0) {
+                    alert("Please calculate valid ROI data first");
+                    return;
+                }
+                
+                const profit = final - initial;
+                const roi = (profit / initial) * 100;
+                const annualized = ((final / initial) ** (1/years) - 1) * 100;
+                
+                const data = [
+                    ['Metric', 'Value'],
+                    ['Initial Investment', formatCurrency(initial)],
+                    ['Final Value', formatCurrency(final)],
+                    ['Investment Period', years.toFixed(1) + ' years'],
+                    ['Profit/Loss', profit >= 0 ? '+'+formatCurrency(profit) : formatCurrency(profit)],
+                    ['ROI', roi.toFixed(2)+'%'],
+                    ['Annualized Return', annualized.toFixed(2)+'%']
+                ];
+                
+                const wb = XLSX.utils.book_new();
+                const ws = XLSX.utils.aoa_to_sheet(data);
+                XLSX.utils.book_append_sheet(wb, ws, "ROI Analysis");
+                XLSX.writeFile(wb, "ROI_Report.xlsx");
+            } catch (error) {
+                console.error("Export failed:", error);
+                alert("Export failed. Please try again.");
+            }
         }
 
         // Initialize
@@ -336,4 +359,5 @@
     </script>
 </body>
 </html>
-            
+        
+ 
